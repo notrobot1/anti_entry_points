@@ -28,14 +28,30 @@ type Result struct {
 
 // Predict принимает исходный код функции и язык и возвращает предсказание модели.
 //
-// lang — расширение или имя файла: "php", ".php", "handler.php".
-// Если lang == "", язык определяется автоматически через Detect.
+// lang — расширение или имя файла: "php", ".php", "handler.php", "/path/to/file.go".
+// Если lang == "", язык определяется из необязательного параметра filename (если передан),
+// иначе — автоматически через Detect по содержимому кода.
+//
+// Примеры:
+//
+//	Predict(code, "go")                    // явный язык
+//	Predict(code, "")                      // автодетект по содержимому
+//	Predict(code, "", "/path/to/main.go")  // по расширению файла, fallback на Detect
+//
 // Если в code несколько функций, берётся та, что занимает больше всего строк;
 // чтобы выбрать функцию по номерам строк в файле, используйте PredictLines.
 // Безопасна для вызова из нескольких горутин.
-func Predict(code []byte, lang string) (Result, error) {
+func Predict(code []byte, lang string, filename ...string) (Result, error) {
 	if lang == "" {
-		lang = Detect(code)
+		if len(filename) > 0 && filename[0] != "" {
+			ext := extension(filename[0])
+			if _, ok := grammars[ext]; ok || regexLangs[ext] {
+				lang = ext
+			}
+		}
+		if lang == "" {
+			lang = Detect(code)
+		}
 		if lang == "" {
 			return Result{}, fmt.Errorf("inputclf: cannot detect language")
 		}
