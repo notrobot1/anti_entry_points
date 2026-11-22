@@ -1,4 +1,5 @@
-module inputclf
+module github.com/notrobot1/anti_entry_points/inputclf
+
 
 go 1.23
 
