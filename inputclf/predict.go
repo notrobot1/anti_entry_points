@@ -29,10 +29,17 @@ type Result struct {
 // Predict принимает исходный код функции и язык и возвращает предсказание модели.
 //
 // lang — расширение или имя файла: "php", ".php", "handler.php".
+// Если lang == "", язык определяется автоматически через Detect.
 // Если в code несколько функций, берётся та, что занимает больше всего строк;
 // чтобы выбрать функцию по номерам строк в файле, используйте PredictLines.
 // Безопасна для вызова из нескольких горутин.
 func Predict(code []byte, lang string) (Result, error) {
+	if lang == "" {
+		lang = Detect(code)
+		if lang == "" {
+			return Result{}, fmt.Errorf("inputclf: cannot detect language")
+		}
+	}
 	// Грамматика PHP разбирает код только после открывающего тега.
 	if extension(lang) == ".php" && !bytes.Contains(code, []byte("<?")) {
 		code = append([]byte("<?php "), code...)
